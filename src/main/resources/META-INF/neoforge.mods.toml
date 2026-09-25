@@ -1,0 +1,37 @@
+modLoader="javafml"
+loaderVersion="[1,)"
+license="All Rights Reserved"
+
+[[mods]]
+modId="notebuns_server"
+version="1.0.4"
+displayName="Hybrid Server Toolkit"
+authors="milkycloud-dev"
+logoFile="notebuns_server_icon.png"
+displayURL="https://github.com/milkycloud-dev/hybrid-server-toolkit"
+description='''Серверные правки для гибридного ядра: генерация Aether без ожидания соседних чанков; очередь прегенерации поверх Chunky; книга рецептов после смерти (Youer); выход процесса, если сервер завис на остановке; проверка готовности прегенерации по файлам регионов. Только сервер.'''
+displayTest="IGNORE_ALL_VERSION"
+
+[[mixins]]
+    config="notebuns_server.mixins.json"
+
+[[dependencies.notebuns_server]]
+    modId="neoforge"
+    type="required"
+    versionRange="[21.1,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.notebuns_server]]
+    modId="chunky"
+    type="optional"
+    versionRange="[0,)"
+    ordering="AFTER"
+    side="SERVER"
+
+[[dependencies.notebuns_server]]
+    modId="aether"
+    type="optional"
+    versionRange="[0,)"
+    ordering="AFTER"
+    side="BOTH"
