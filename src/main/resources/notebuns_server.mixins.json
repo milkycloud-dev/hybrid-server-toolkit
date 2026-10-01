@@ -3,6 +3,6 @@
   "minVersion": "0.8",
   "package": "com.notebuns.server.mixin",
   "compatibilityLevel": "JAVA_21",
-  "mixins": ["DungeonBlacklistFilterMixin"],
+  "mixins": ["DungeonBlacklistFilterMixin", "BukkitViewSlotMixin"],
   "injectors": { "defaultRequire": 1 }
 }

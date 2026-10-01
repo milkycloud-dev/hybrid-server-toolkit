@@ -26,6 +26,10 @@ The mod collects fixes that came out of running a heavily modded 1.21.1 server o
 | Disk check | Chunky reports 100 % even when chunks failed or were lost in a crash during world saving. | After Chunky finishes, the next start reads the region files. A world is done only when every chunk of the square is stored with status `full`; otherwise it goes back into the queue. |
 | Recipe book | On Youer the recipe book is empty after every death: its `restoreFrom` lacks vanilla's recipe book copy. | Copies the book on respawn, and on login restores recipes from completed recipe advancements. |
 | Exit watchdog | An out-of-memory error during shutdown can leave background threads alive, so the process never exits and the panel thinks the server is running. | 90 seconds after the server thread has died, the process exits with code 1 so the panel restarts it. |
+| Respawn position | On Youer the client never got its position after a respawn and stood wherever it guessed; the server took that as movement and counted the drop as fall damage. | Switches `connection.player` to the new player before the respawn teleport, as vanilla expects. |
+| Death rules | Game rules are per dimension on Youer and drift apart: death messages off or instant respawn in some dimensions. | At every start sets `doImmediateRespawn` and `showDeathMessages` in each dimension to the overworld values. |
+| Death snapshots | InventoryRollbackPlus misses Curios and Accessories slots. | Saves the whole player NBT on death; `/deathbackup list` and `/deathbackup view` show it. |
+| Modded menu slots | Bukkit views of modded menus are smaller than the menu, so plugins throw on clicks past them. | Such a click counts as a click outside the window. |
 | Aether generation | Aether's dungeon blacklist filter asks the world-wide structure manager, which loads neighbour chunks synchronously during decoration. Profiling showed Aether generating about 40 times slower than the overworld. | The filter gets the structure manager bound to the generation region, as vanilla does at that step. |
 
 ### Pregeneration queue
@@ -103,6 +107,10 @@ Proprietary, all rights reserved. Official release binaries may be run unmodifie
 | Проверка диска | Chunky показывает 100 %, даже если чанки упали с ошибкой или потерялись при падении во время сохранения миров. | Когда Chunky закончил, при следующем старте читаются файлы регионов. Мир готов, только если каждый чанк квадрата записан со статусом `full`; иначе он возвращается в очередь. |
 | Книга рецептов | На Youer после каждой смерти книга рецептов пустая: в его `restoreFrom` нет ванильного копирования книги. | Копирует книгу при возрождении, а при входе возвращает рецепты из выполненных достижений. |
 | Сторож выхода | Нехватка памяти во время остановки может оставить фоновые потоки живыми: процесс не выходит, а панель считает сервер работающим. | Через 90 секунд после смерти основного потока сервера процесс завершается с кодом 1, и панель его перезапускает. |
+| Позиция после возрождения | В Youer клиент после возрождения не получал свою позицию и стоял, где сам решил; сервер принимал это за движение и считал падение. | Переключает `connection.player` на нового игрока до телепорта возрождения, как ждёт ваниль. |
+| Правила смерти | В Youer правила игры свои у каждого измерения и расходятся: где-то выключены сообщения о смерти или включено мгновенное возрождение. | При каждом старте выставляет `doImmediateRespawn` и `showDeathMessages` во всех измерениях как в верхнем мире. |
+| Снимки смертей | InventoryRollbackPlus не видит слоты Curios и Accessories. | Сохраняет все данные игрока при смерти; их показывают `/deathbackup list` и `/deathbackup view`. |
+| Слоты модовых окон | Bukkit-представление модового окна меньше самого окна, и плагины падают на клике за его пределами. | Такой клик считается кликом вне окна. |
 | Генерация Aether | Фильтр подземелий Aether спрашивает менеджер структур всего мира, а тот на шаге декораций синхронно грузит соседние чанки. По профилю Aether генерировался примерно в 40 раз медленнее верхнего мира. | Фильтр получает менеджер структур, привязанный к области генерации, как делает ваниль на этом шаге. |
 
 ### Очередь прегенерации

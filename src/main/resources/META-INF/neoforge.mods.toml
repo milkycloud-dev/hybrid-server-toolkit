@@ -4,12 +4,12 @@ license="All Rights Reserved"
 
 [[mods]]
 modId="notebuns_server"
-version="1.0.4"
+version="1.0.8"
 displayName="Hybrid Server Toolkit"
 authors="milkycloud-dev"
 logoFile="notebuns_server_icon.png"
 displayURL="https://github.com/milkycloud-dev/hybrid-server-toolkit"
-description='''Серверные правки для гибридного ядра: генерация Aether без ожидания соседних чанков; очередь прегенерации поверх Chunky; книга рецептов после смерти (Youer); выход процесса, если сервер завис на остановке; проверка готовности прегенерации по файлам регионов. Только сервер.'''
+description='''Серверные правки для гибридного ядра: генерация Aether без ожидания соседних чанков; очередь прегенерации поверх Chunky; книга рецептов после смерти (Youer); выход процесса, если сервер завис на остановке; проверка готовности прегенерации по файлам регионов; клик по слоту вне Bukkit-окна; позиция клиента после возрождения; правила смерти в измерениях как в верхнем мире; полный снимок игрока при смерти с модовыми слотами (/deathbackup). Только сервер.'''
 displayTest="IGNORE_ALL_VERSION"
 
 [[mixins]]
