@@ -2,7 +2,7 @@
 
 <h1 align="center">Hybrid Server Toolkit</h1>
 
-<p align="center">Server-only NeoForge 1.21.1 mod with fixes for large modded servers: a Chunky pregeneration queue with a real on-disk completion check, recipe book recovery, a watchdog for hung shutdowns and faster Aether generation.</p>
+<p align="center">Server-only NeoForge 1.21.1 mod with fixes for large modded servers: a content log for modded containers, a Chunky pregeneration queue with a real on-disk completion check, recipe book recovery, a watchdog for hung shutdowns and faster Aether generation.</p>
 
 <p align="center">
   <a href="https://github.com/milkycloud-dev/hybrid-server-toolkit/actions/workflows/build.yml"><img src="https://github.com/milkycloud-dev/hybrid-server-toolkit/actions/workflows/build.yml/badge.svg" alt="Build"></a>
@@ -30,6 +30,7 @@ The mod collects fixes that came out of running a heavily modded 1.21.1 server o
 | Death rules | Game rules are per dimension on Youer and drift apart: death messages off or instant respawn in some dimensions. | At every start sets `doImmediateRespawn` and `showDeathMessages` in each dimension to the overworld values. |
 | Death snapshots | InventoryRollbackPlus misses Curios and Accessories slots. | Saves the whole player NBT on death; `/deathbackup list` and `/deathbackup view` show it. |
 | Modded menu slots | Bukkit views of modded menus are smaller than the menu, so plugins throw on clicks past them. | Such a click counts as a click outside the window. |
+| Container content log | CoreProtect records only vanilla containers. A rollback brings Create vaults, backpacks, machines and other modded storage back empty. | Saves the full block-entity data of every container it does not cover right before it is broken, blown up or replaced, with the player or cause, and records changed contents on every chunk save. |
 | Aether generation | Aether's dungeon blacklist filter asks the world-wide structure manager, which loads neighbour chunks synchronously during decoration. Profiling showed Aether generating about 40 times slower than the overworld. | The filter gets the structure manager bound to the generation region, as vanilla does at that step. |
 
 ### Pregeneration queue
@@ -61,6 +62,31 @@ The queue is configured in `config/notebuns_pregen.json`. Without the file the q
 
 The file is re-read every 30 seconds when it changes, so the list and `concurrent` can be edited on a running server. Tasks above `concurrent` are paused from the end of the list and continued later. A manual `chunky pause` holds the queue until `chunky continue` or a restart. Completion events that arrive while the server is already stopping are ignored, and a world listed as done whose Chunky task is not really finished goes back into the queue.
 
+### Container content log
+
+Records the contents of every block entity with items that CoreProtect does not record (everything except the vanilla chest, trapped chest, barrel, shulker box, furnaces, hopper, dropper, dispenser, brewing stand, crafter and chiseled bookshelf).
+
+| Event | When | Cause recorded |
+|---|---|---|
+| `break` | a player breaks the block | `player:<nick>:<uuid>` |
+| `explode` | an explosion removes it | `explosion[:<entity>][:by:<igniter>]` |
+| `replace` | anything else replaces it, including `/setblock`, `/fill`, `/clone` | `command`, or `code:<class>` of the mod that did it |
+| `save` / `change` | the chunk is saved and the contents differ from the last record | `save`, or `stop` at shutdown |
+| `empty` | the container lost all items or disappeared | |
+
+The snapshot is taken before the block's own removal code drops or clears the items. Records go to `notebuns/containerlog/<yyyy-MM-dd>.jsonl` (past days gzipped), one JSON object per line with the full NBT as base64 gzip, so a restore is lossless. `change` is written at most once per `saveMinIntervalMinutes` per block; a change inside that window is written when it ends or at shutdown. Hashes are kept in `index.dat`, so restarts do not re-log unchanged containers. Settings in `config/notebuns_containerlog.json`, re-read every 10 seconds:
+
+| Key | Default | Meaning |
+|---|---|---|
+| `enabled` | `true` | master switch |
+| `excludeBlockEntities` | the CoreProtect list above | block-entity ids not to log |
+| `trackKeys` | Create logistics keys (`AddressFilter`, `Freq`, `Categories`, `Connections`, `Target`, `Filter`, …) | non-item keys that make a block worth logging when filled |
+| `saveMinIntervalMinutes` | `60` | minimum gap between `change` records of one block |
+| `logMovedBlocks` | `false` | also log blocks moved by pistons and contraptions |
+| `retentionDays`, `maxDiskMegabytes` | `30`, `4096` | local retention |
+
+`/containerlog status` (op level 3) shows counters. To restore, decode the record's `nbt` and apply it with `data merge block`.
+
 ### Requirements
 
 - Minecraft 1.21.1, NeoForge 21.1 or a NeoForge-based hybrid core
@@ -73,7 +99,7 @@ The file is re-read every 30 seconds when it changes, so the list and `concurren
 
 1. Download `hybrid-server-toolkit-<version>.jar` from [Releases](https://github.com/milkycloud-dev/hybrid-server-toolkit/releases) and put it into `mods/` on the server.
 2. For the queue, create `config/notebuns_pregen.json` as shown above.
-3. Restart. The recipe book fix, the watchdog and the Aether fix work without configuration.
+3. Restart. The container log, the recipe book fix, the watchdog and the Aether fix work without configuration.
 
 The mod id `notebuns_server` and the config file name are kept from the first deployment, so existing installs keep their state.
 
@@ -111,6 +137,7 @@ Proprietary, all rights reserved. Official release binaries may be run unmodifie
 | Правила смерти | В Youer правила игры свои у каждого измерения и расходятся: где-то выключены сообщения о смерти или включено мгновенное возрождение. | При каждом старте выставляет `doImmediateRespawn` и `showDeathMessages` во всех измерениях как в верхнем мире. |
 | Снимки смертей | InventoryRollbackPlus не видит слоты Curios и Accessories. | Сохраняет все данные игрока при смерти; их показывают `/deathbackup list` и `/deathbackup view`. |
 | Слоты модовых окон | Bukkit-представление модового окна меньше самого окна, и плагины падают на клике за его пределами. | Такой клик считается кликом вне окна. |
+| Журнал содержимого контейнеров | CoreProtect записывает только ванильные контейнеры. Откат возвращает хранилища Create, рюкзаки, механизмы и другие модовые хранилища пустыми. | Сохраняет все данные блока-сущности каждого такого контейнера прямо перед сломом, взрывом или заменой, с игроком или причиной, и записывает изменённое содержимое при каждом сохранении чанка. |
 | Генерация Aether | Фильтр подземелий Aether спрашивает менеджер структур всего мира, а тот на шаге декораций синхронно грузит соседние чанки. По профилю Aether генерировался примерно в 40 раз медленнее верхнего мира. | Фильтр получает менеджер структур, привязанный к области генерации, как делает ваниль на этом шаге. |
 
 ### Очередь прегенерации
@@ -142,6 +169,22 @@ Proprietary, all rights reserved. Official release binaries may be run unmodifie
 
 Файл перечитывается раз в 30 секунд, если он изменился, так что список и `concurrent` можно править на работающем сервере. Задачи сверх `concurrent` ставятся на паузу с конца списка и продолжаются позже. Ручной `chunky pause` держит очередь до `chunky continue` или перезапуска. События завершения, пришедшие, когда сервер уже останавливается, не засчитываются, а мир из `done`, чья задача у Chunky на самом деле не закончена, возвращается в очередь.
 
+### Журнал содержимого контейнеров
+
+Записывает содержимое каждого блока-сущности с предметами, которого не записывает CoreProtect (всё, кроме ванильных сундука, сундука-ловушки, бочки, шалкера, печей, воронки, выбрасывателя, раздатчика, варочной стойки, автокрафтера и резной книжной полки).
+
+| Событие | Когда | Причина в записи |
+|---|---|---|
+| `break` | игрок ломает блок | `player:<ник>:<uuid>` |
+| `explode` | блок убирает взрыв | `explosion[:<сущность>][:by:<поджигатель>]` |
+| `replace` | блок заменяет что-то другое, в том числе `/setblock`, `/fill`, `/clone` | `command` или `code:<класс>` мода |
+| `save` / `change` | чанк сохраняется, а содержимое отличается от прошлой записи | `save`, при остановке `stop` |
+| `empty` | контейнер опустел или исчез | |
+
+Снимок снимается до того, как код удаления блока выбросит или очистит предметы. Записи идут в `notebuns/containerlog/<гггг-ММ-дд>.jsonl` (прошлые дни сжимаются), по объекту JSON в строке, с полным NBT в base64 gzip, так что восстановление без потерь. `change` пишется не чаще раза в `saveMinIntervalMinutes` на блок; изменение внутри окна пишется, когда окно кончится, или при остановке. Хэши хранятся в `index.dat`, и после перезапуска неизменённые контейнеры не пишутся заново. Настройки в `config/notebuns_containerlog.json`, перечитываются раз в 10 секунд: `enabled`, `excludeBlockEntities`, `trackKeys`, `saveMinIntervalMinutes` (60), `logMovedBlocks` (`false`), `retentionDays` (30), `maxDiskMegabytes` (4096).
+
+`/containerlog status` (уровень 3) показывает счётчики. Для восстановления раскодировать `nbt` записи и применить через `data merge block`.
+
 ### Требования
 
 - Minecraft 1.21.1, NeoForge 21.1 или гибридное ядро на NeoForge
@@ -154,7 +197,7 @@ Proprietary, all rights reserved. Official release binaries may be run unmodifie
 
 1. Скачать `hybrid-server-toolkit-<версия>.jar` из [Releases](https://github.com/milkycloud-dev/hybrid-server-toolkit/releases) и положить в `mods/` на сервере.
 2. Для очереди создать `config/notebuns_pregen.json`, как показано выше.
-3. Перезапустить сервер. Книга рецептов, сторож и правка Aether работают без настройки.
+3. Перезапустить сервер. Журнал контейнеров, книга рецептов, сторож и правка Aether работают без настройки.
 
 Mod id `notebuns_server` и имя файла настроек остались от первой установки, чтобы существующие установки сохранили состояние.
 

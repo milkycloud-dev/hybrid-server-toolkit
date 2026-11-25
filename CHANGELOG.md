@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.0 (2026-11-25)
+
+- Container content log. CoreProtect records only vanilla containers, so a rollback brings modded storage (Create vaults, backpacks, machines with filters) back empty. Every block entity with items that CoreProtect does not cover is now saved in full right before it is broken (`break`, with the player), blown up (`explode`, with the explosion source) or replaced (`replace`, including `/setblock`, `/fill` and `/clone`, which empty a container before replacing it), and its contents are recorded when they change on a chunk save (`save`, `change`, `empty`). Changes are throttled per block and flushed at shutdown on the server thread. Files `notebuns/containerlog/<day>.jsonl`, settings `config/notebuns_containerlog.json`, `/containerlog status`.
+
 ## 1.0.8 (2026-10-01)
 
 - `/deathbackup`: a nick resolves to snapshots even when typed in another case or missing from the profile cache. In offline mode the cache invents a UUID for any spelling, so it is used only when snapshots exist under it; otherwise the name stored inside the snapshots is matched. One unreadable file no longer stops the search.

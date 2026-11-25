@@ -29,6 +29,7 @@ public final class NoteBunsServer {
         NeoForge.EVENT_BUS.register(new RespawnSync());
         NeoForge.EVENT_BUS.register(new DeathRulesSync());
         NeoForge.EVENT_BUS.register(new DeathBackup());
+        NeoForge.EVENT_BUS.register(new ContainerLog());
         if (ModList.get().isLoaded("chunky")) {
             NeoForge.EVENT_BUS.register(new PregenQueue());
         }
